@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Send, Brain, Sparkles, Check } from "lucide-react";
+import { getChatCompletion, Message } from "@/utils/groqApi";
+import { useToast } from "@/hooks/use-toast";
 
 const subjects = [
   { id: 'math', name: 'Mathematics', icon: '📊' },
@@ -17,56 +19,91 @@ const subjects = [
   { id: 'art', name: 'Arts & Music', icon: '🎨' },
 ];
 
-const demoConversation = [
-  {
-    role: 'user',
-    content: 'Can you explain how photosynthesis works?',
-  },
-  {
-    role: 'assistant',
-    content: `Photosynthesis is the process plants use to convert light energy into chemical energy.
-
-Here's how it works:
-1. Plants capture sunlight using chlorophyll in their leaves
-2. They take in carbon dioxide (CO₂) from the air through tiny pores called stomata
-3. They absorb water (H₂O) through their roots
-4. Using the energy from sunlight, plants convert CO₂ and H₂O into glucose (sugar) and oxygen
-5. The oxygen is released into the air, and the glucose is used for energy or stored
-
-The chemical equation is: 
-6CO₂ + 6H₂O + light energy → C₆H₁₂O₆ (glucose) + 6O₂
-
-Photosynthesis is essential for life on Earth as it provides oxygen and forms the base of most food chains!`,
-  },
-  {
-    role: 'user',
-    content: 'What organelles are involved in photosynthesis?',
-  },
-  {
-    role: 'assistant',
-    content: `The main organelles involved in photosynthesis are:
-
-1. **Chloroplasts** - The primary organelle where photosynthesis takes place. They contain:
-   - **Thylakoids** - Disc-shaped structures arranged in stacks called grana
-   - **Stroma** - The fluid-filled space surrounding the thylakoids
-
-2. **Cell wall** - While not directly involved in photosynthesis, it provides structural support
-
-3. **Cell membrane** - Controls what enters and exits the cell
-
-4. **Vacuole** - Stores water and nutrients that may be used in photosynthesis
-
-The process of photosynthesis occurs in two main stages:
-- Light-dependent reactions: Take place in the thylakoid membranes
-- Light-independent reactions (Calvin cycle): Occur in the stroma
-
-Would you like me to explain how these organelles work together in more detail?`,
-  },
-];
-
 const AITutor = () => {
   const [message, setMessage] = useState("");
   const [activeTab, setActiveTab] = useState("chat");
+  const [isLoading, setIsLoading] = useState(false);
+  const [conversations, setConversations] = useState<Message[]>([
+    {
+      role: 'system',
+      content: 'You are an AI educational tutor named SeedIQ Tutor. You are helpful, knowledgeable, and focused on education. Provide clear, concise, and accurate information. Break down complex topics into understandable segments. Always be encouraging and positive. If a student asks about topics outside of education, politely redirect them to educational topics.'
+    }
+  ]);
+  const { toast } = useToast();
+  const messageEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to the latest message
+  useEffect(() => {
+    if (messageEndRef.current) {
+      messageEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [conversations]);
+
+  const handleSendMessage = async () => {
+    if (!message.trim()) return;
+
+    // Add user message to conversation
+    const userMessage: Message = {
+      role: 'user',
+      content: message
+    };
+
+    setConversations(prev => [...prev, userMessage]);
+    setMessage("");
+    setIsLoading(true);
+
+    try {
+      // Get conversation history for context
+      const messagesForApi = [...conversations, userMessage];
+      
+      // Call the Groq API
+      const response = await getChatCompletion(messagesForApi);
+      
+      if (response.error) {
+        toast({
+          title: "Error",
+          description: response.error,
+          variant: "destructive"
+        });
+      } else {
+        // Add AI response to conversation
+        const assistantMessage: Message = {
+          role: 'assistant',
+          content: response.text
+        };
+        setConversations(prev => [...prev, assistantMessage]);
+      }
+    } catch (error) {
+      console.error("Error in AI response:", error);
+      toast({
+        title: "Error",
+        description: "Failed to get response from AI. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  const startNewConversation = (subject: string) => {
+    setConversations([
+      {
+        role: 'system',
+        content: `You are an AI educational tutor named SeedIQ Tutor specializing in ${subject}. You are helpful, knowledgeable, and focused on education. Provide clear, concise, and accurate information. Break down complex topics into understandable segments. Always be encouraging and positive.`
+      }
+    ]);
+    setActiveTab("chat");
+  };
+
+  // Filter out system messages for display
+  const displayConversations = conversations.filter(msg => msg.role !== 'system');
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -106,25 +143,50 @@ const AITutor = () => {
                   
                   <div className="h-[500px] overflow-y-auto p-4">
                     <div className="space-y-4">
-                      <div className="flex justify-center">
-                        <div className="bg-gray-100 rounded-lg px-4 py-2 text-sm text-gray-500">
-                          Today
+                      {displayConversations.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center h-96 text-center">
+                          <Brain className="h-12 w-12 text-seediq-300 mb-4" />
+                          <h3 className="text-xl font-medium text-gray-700">Welcome to SeedIQ AI Tutor</h3>
+                          <p className="text-gray-500 mt-2 max-w-md">
+                            Ask any academic question to get started. I'm here to help with your learning!
+                          </p>
                         </div>
-                      </div>
-
-                      {demoConversation.map((msg, index) => (
-                        <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                          <div
-                            className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                              msg.role === 'user'
-                                ? 'bg-seediq-600 text-white'
-                                : 'bg-white border border-gray-200'
-                            }`}
-                          >
-                            <div className="whitespace-pre-line">{msg.content}</div>
+                      ) : (
+                        <>
+                          <div className="flex justify-center">
+                            <div className="bg-gray-100 rounded-lg px-4 py-2 text-sm text-gray-500">
+                              Today
+                            </div>
                           </div>
-                        </div>
-                      ))}
+
+                          {displayConversations.map((msg, index) => (
+                            <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                              <div
+                                className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                                  msg.role === 'user'
+                                    ? 'bg-seediq-600 text-white'
+                                    : 'bg-white border border-gray-200'
+                                }`}
+                              >
+                                <div className="whitespace-pre-line">{msg.content}</div>
+                              </div>
+                            </div>
+                          ))}
+
+                          {isLoading && (
+                            <div className="flex justify-start">
+                              <div className="bg-white border border-gray-200 max-w-[80%] rounded-lg px-4 py-2">
+                                <div className="flex space-x-2 items-center">
+                                  <div className="w-2 h-2 rounded-full bg-seediq-600 animate-pulse"></div>
+                                  <div className="w-2 h-2 rounded-full bg-seediq-600 animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                                  <div className="w-2 h-2 rounded-full bg-seediq-600 animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
+                      <div ref={messageEndRef} />
                     </div>
                   </div>
 
@@ -135,9 +197,16 @@ const AITutor = () => {
                         className="resize-none"
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
+                        onKeyDown={handleKeyPress}
+                        disabled={isLoading}
                         rows={3}
                       />
-                      <Button className="flex-shrink-0" size="icon">
+                      <Button 
+                        className="flex-shrink-0" 
+                        size="icon" 
+                        onClick={handleSendMessage}
+                        disabled={isLoading || !message.trim()}
+                      >
                         <Send className="h-5 w-5" />
                       </Button>
                     </div>
@@ -184,6 +253,7 @@ const AITutor = () => {
                           key={subject.id}
                           variant="outline"
                           className="h-auto py-4 justify-start gap-2"
+                          onClick={() => startNewConversation(subject.name)}
                         >
                           <span className="text-2xl">{subject.icon}</span>
                           <span>{subject.name}</span>
@@ -191,7 +261,7 @@ const AITutor = () => {
                       ))}
                     </div>
                     <p className="mt-4 text-sm text-gray-600">
-                      Our AI tutor is continuously learning and expanding its knowledge base to help you with even more subjects.
+                      Click on any subject to start a new conversation focused on that topic.
                     </p>
                   </CardContent>
                 </Card>
