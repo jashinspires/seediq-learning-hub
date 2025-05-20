@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Menu, X } from "lucide-react";
+import { Menu, X, UserRound } from "lucide-react";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -33,6 +33,10 @@ const Navbar = () => {
           </Link>
           <Link to="/community" className="text-gray-700 hover:text-seediq-600 font-medium">
             Community
+          </Link>
+          <Link to="/profile" className="text-gray-700 hover:text-seediq-600 font-medium flex items-center gap-1">
+            <UserRound size={16} />
+            Profile
           </Link>
         </div>
 
@@ -78,6 +82,14 @@ const Navbar = () => {
               onClick={toggleMenu}
             >
               Community
+            </Link>
+            <Link 
+              to="/profile" 
+              className="text-gray-700 hover:text-seediq-600 font-medium py-2 flex items-center gap-1"
+              onClick={toggleMenu}
+            >
+              <UserRound size={16} />
+              Profile
             </Link>
             <div className="pt-4 flex flex-col space-y-3">
               <Button variant="outline" className="w-full">Sign In</Button>

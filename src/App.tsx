@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import SkillUp from "./pages/SkillUp";
 import AITutor from "./pages/AITutor";
 import Community from "./pages/Community";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/skillup" element={<SkillUp />} />
           <Route path="/ai-tutor" element={<AITutor />} />
           <Route path="/community" element={<Community />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
