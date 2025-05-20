@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Menu, X, UserRound } from "lucide-react";
+import ThemeColorPicker from "./ThemeColorPicker";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -41,14 +42,18 @@ const Navbar = () => {
         </div>
 
         <div className="hidden lg:flex items-center space-x-4">
+          <ThemeColorPicker />
           <Button variant="outline">Sign In</Button>
           <Button>Sign Up</Button>
         </div>
 
         {/* Mobile Menu Button */}
-        <button className="lg:hidden text-gray-700" onClick={toggleMenu}>
-          {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        <div className="flex items-center gap-3 lg:hidden">
+          <ThemeColorPicker />
+          <button className="text-gray-700" onClick={toggleMenu}>
+            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Navigation */}
