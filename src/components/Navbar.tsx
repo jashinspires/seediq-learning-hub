@@ -2,13 +2,25 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Menu, X, UserRound } from "lucide-react";
+import { Menu, X, UserRound, LogOut } from "lucide-react";
+import { useAuth } from "@/providers/AuthProvider";
+import { useToast } from "@/hooks/use-toast";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { isAuthenticated, logout } = useAuth();
+  const { toast } = useToast();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
+  };
+
+  const handleLogout = () => {
+    logout();
+    toast({
+      title: "Logged out",
+      description: "You have been successfully logged out",
+    });
   };
 
   return (
@@ -41,8 +53,17 @@ const Navbar = () => {
         </div>
 
         <div className="hidden lg:flex items-center space-x-4">
-          <Button variant="outline">Sign In</Button>
-          <Button>Sign Up</Button>
+          {isAuthenticated ? (
+            <Button variant="outline" onClick={handleLogout} className="flex items-center gap-2">
+              <LogOut size={16} />
+              Sign Out
+            </Button>
+          ) : (
+            <>
+              <Button variant="outline">Sign In</Button>
+              <Button>Sign Up</Button>
+            </>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -92,8 +113,24 @@ const Navbar = () => {
               Profile
             </Link>
             <div className="pt-4 flex flex-col space-y-3">
-              <Button variant="outline" className="w-full">Sign In</Button>
-              <Button className="w-full">Sign Up</Button>
+              {isAuthenticated ? (
+                <Button 
+                  variant="outline" 
+                  className="w-full flex items-center justify-center gap-2"
+                  onClick={() => {
+                    handleLogout();
+                    toggleMenu();
+                  }}
+                >
+                  <LogOut size={16} />
+                  Sign Out
+                </Button>
+              ) : (
+                <>
+                  <Button variant="outline" className="w-full">Sign In</Button>
+                  <Button className="w-full">Sign Up</Button>
+                </>
+              )}
             </div>
           </div>
         </div>
