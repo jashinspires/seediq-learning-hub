@@ -4,7 +4,7 @@ import { getChatCompletion, Message, fileToBase64 } from "@/utils/groqApi";
 import { useToast } from "@/hooks/use-toast";
 
 export const useWorkspaceStore = () => {
-  // System message for the assistant
+  // Define the system message first before using it in useState
   const systemMessage: Message = {
     role: 'system',
     content: 'You are a helpful AI assistant in the SeedIQ Workspace. You provide clear, accurate information across various subjects including math, science, programming, languages, history, and arts. Break down complex topics into understandable segments, be encouraging, and focus on educational content.'

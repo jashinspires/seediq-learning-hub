@@ -1,5 +1,5 @@
 
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { Send, Image as ImageIcon, History, MessageSquare, Plus, Settings, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Message } from "@/utils/groqApi";
