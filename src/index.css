@@ -16,7 +16,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 201 96% 32%;
+    --primary: 252 73% 65%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 210 40% 96.1%;
@@ -25,7 +25,7 @@
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 201 96% 32%;
+    --accent: 252 73% 65%;
     --accent-foreground: 222.2 47.4% 11.2%;
 
     --destructive: 0 84.2% 60.2%;
@@ -33,9 +33,17 @@
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 201 96% 32%;
+    --ring: 252 73% 65%;
 
     --radius: 0.75rem;
+    
+    /* Dark theme vars for SeedIQ Workspace */
+    --seediq-dark-bg: 224 15% 8%;
+    --seediq-dark-surface: 225 14% 10%;
+    --seediq-dark-border: 226 15% 18%;
+    --seediq-dark-text: 210 40% 98%;
+    --seediq-dark-text-secondary: 214 32% 75%;
+    --seediq-primary: 252 73% 65%;
   }
 
   .dark {
@@ -48,7 +56,7 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 201 96% 32%;
+    --primary: 252 73% 65%;
     --primary-foreground: 222.2 47.4% 11.2%;
 
     --secondary: 217.2 32.6% 17.5%;
@@ -57,7 +65,7 @@
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 201 96% 32%;
+    --accent: 252 73% 65%;
     --accent-foreground: 210 40% 98%;
 
     --destructive: 0 62.8% 30.6%;
@@ -104,4 +112,32 @@
 /* Grid for activity heatmap - 52 weeks in a year */
 .grid-cols-52 {
   grid-template-columns: repeat(52, minmax(0, 1fr));
+}
+
+/* Custom scrollbar for the app */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Glassmorphism effects */
+.glass-panel {
+  @apply backdrop-blur-lg bg-white/5 border border-white/10;
+}
+
+/* Gradient text */
+.gradient-text {
+  @apply bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-transparent;
 }
