@@ -8,6 +8,12 @@ import { getChatCompletion, Message, fileToBase64 } from "@/utils/groqApi";
 import { useToast } from "@/hooks/use-toast";
 
 const Workspace = () => {
+  // Define systemMessage first before using it
+  const systemMessage: Message = {
+    role: 'system',
+    content: 'You are a helpful AI assistant in the SeedIQ Workspace. You provide clear, accurate information across various subjects including math, science, programming, languages, history, and arts. Break down complex topics into understandable segments, be encouraging, and focus on educational content.'
+  };
+  
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -30,12 +36,6 @@ const Workspace = () => {
   const messageEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
-  
-  // System message for the tutor
-  const systemMessage: Message = {
-    role: 'system',
-    content: 'You are a helpful AI assistant in the SeedIQ Workspace. You provide clear, accurate information across various subjects including math, science, programming, languages, history, and arts. Break down complex topics into understandable segments, be encouraging, and focus on educational content.'
-  };
   
   // Save conversations to localStorage whenever they change
   useEffect(() => {
