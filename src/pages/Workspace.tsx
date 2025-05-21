@@ -33,7 +33,7 @@ const Workspace = () => {
         <div className="flex flex-1 flex-col h-full">
           <ChatHeader onNewChat={startNewConversation} />
           
-          <main className="flex-1 overflow-hidden relative bg-[#0f1117]" ref={messagesContainerRef}>
+          <main className="flex-1 overflow-hidden relative" ref={messagesContainerRef}>
             <div className="h-full flex flex-col">
               <ChatMessages 
                 messages={displayConversations}
