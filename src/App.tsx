@@ -7,7 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/providers/AuthProvider";
 import Index from "./pages/Index";
 import SkillUp from "./pages/SkillUp";
-import AITutor from "./pages/AITutor";
+import Workspace from "./pages/Workspace";
 import Community from "./pages/Community";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
@@ -24,7 +24,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/skillup" element={<SkillUp />} />
-            <Route path="/ai-tutor" element={<AITutor />} />
+            <Route path="/workspace" element={<Workspace />} />
             <Route path="/community" element={<Community />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="*" element={<NotFound />} />

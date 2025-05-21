@@ -40,8 +40,8 @@ const Navbar = () => {
           <Link to="/skillup" className="text-gray-700 hover:text-seediq-600 font-medium">
             SkillUp
           </Link>
-          <Link to="/ai-tutor" className="text-gray-700 hover:text-seediq-600 font-medium">
-            AI Tutor
+          <Link to="/workspace" className="text-gray-700 hover:text-seediq-600 font-medium">
+            Workspace
           </Link>
           <Link to="/community" className="text-gray-700 hover:text-seediq-600 font-medium">
             Community
@@ -91,11 +91,11 @@ const Navbar = () => {
               SkillUp
             </Link>
             <Link 
-              to="/ai-tutor" 
+              to="/workspace" 
               className="text-gray-700 hover:text-seediq-600 font-medium py-2"
               onClick={toggleMenu}
             >
-              AI Tutor
+              Workspace
             </Link>
             <Link 
               to="/community" 
