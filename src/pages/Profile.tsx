@@ -1,361 +1,344 @@
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { Check, Cloud, Flame, LogIn, LogOut, RotateCcw } from "lucide-react";
+import { AppShell } from "@/components/layout/AppShell";
+import {
+  buildActivityHeatmap,
+  calculateGoalProgress,
+  calculateStreak,
+} from "@/lib/studyLogic";
+import { useStudy } from "@/store/StudyContext";
+import { useToast } from "@/hooks/use-toast";
 
-import { useState } from "react";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CalendarDays, Settings, User, Users, Activity } from "lucide-react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+const Profile: React.FC = () => {
+  const {
+    state,
+    todayIso,
+    authUser,
+    syncStatus,
+    updateProfile,
+    signOutUser,
+    resetWorkspace,
+  } = useStudy();
+  const { toast } = useToast();
 
-const Profile = () => {
-  const [activeTab, setActiveTab] = useState("personal");
+  const [name, setName] = useState(state.profile.name);
+  const [bio, setBio] = useState(state.profile.bio);
+  const [dailyTargetMinutes, setDailyTargetMinutes] = useState(
+    state.profile.dailyTargetMinutes
+  );
+  const [isResetting, setIsResetting] = useState(false);
 
-  // Mock user data
-  const userData = {
-    name: "Alex Johnson",
-    username: "alexcode",
-    email: "alex@example.com",
-    joinDate: "January 2023",
-    location: "San Francisco, CA",
-    bio: "Full-stack developer passionate about learning new technologies and sharing knowledge with the community.",
-    skills: ["JavaScript", "React", "Node.js", "Python", "Data Structures"],
-    streak: 47,
-    totalSolved: 325,
-    followers: 128,
-    following: 84,
+  useEffect(() => {
+    setName(state.profile.name);
+    setBio(state.profile.bio);
+    setDailyTargetMinutes(state.profile.dailyTargetMinutes);
+  }, [
+    state.profile.name,
+    state.profile.bio,
+    state.profile.dailyTargetMinutes,
+  ]);
+
+  const streak = calculateStreak(state.activityLog, todayIso);
+  const heatmapWeeks = buildActivityHeatmap(state.activityLog, todayIso, 16);
+
+  const completedMilestones = state.goals.reduce(
+    (sum, g) => sum + g.milestones.filter((m) => m.completed).length,
+    0
+  );
+  const totalSessions = Object.values(state.activityLog).reduce(
+    (sum, v) => sum + v,
+    0
+  );
+
+  const handleSaveProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    updateProfile({
+      name: name.trim(),
+      bio: bio.trim(),
+      dailyTargetMinutes: Math.max(
+        10,
+        Math.min(240, dailyTargetMinutes || 45)
+      ),
+    });
+    toast({
+      title: "Profile updated",
+      description: authUser
+        ? "Saved and synced to your cloud study desk."
+        : "Your local study desk preferences have been saved.",
+    });
+  };
+
+  const handleSignOut = async () => {
+    await signOutUser();
+    toast({
+      title: "Signed out",
+      description: "Returned to local study desk mode.",
+    });
+  };
+
+  const handleReset = async () => {
+    setIsResetting(true);
+    try {
+      await resetWorkspace();
+      toast({ title: "Workspace reset to starter study paths" });
+    } finally {
+      setIsResetting(false);
+    }
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
-      <main className="flex-grow">
-        <div className="container mx-auto px-4 py-8">
-          {/* Profile header */}
-          <div className="flex flex-col md:flex-row items-start gap-6 mb-8">
-            <div className="w-24 h-24 rounded-full bg-seediq-600 text-white flex items-center justify-center text-3xl font-bold">
-              {userData.name.charAt(0)}
+    <AppShell>
+      <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 space-y-8">
+        {/* Header Card (#D6E3E4 Cool Mist) */}
+        <div className="rounded-xl bg-[#D6E3E4] p-6 text-black sm:p-8 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-5">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-black font-heading text-2xl font-extrabold text-[#F6FF81]">
+              {state.profile.name.charAt(0).toUpperCase()}
             </div>
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold">{userData.name}</h1>
-              <p className="text-gray-600">@{userData.username}</p>
-              <div className="flex gap-4 mt-2">
-                <span className="text-sm">
-                  <span className="font-bold">{userData.streak}</span> day streak
-                </span>
-                <span className="text-sm">
-                  <span className="font-bold">{userData.followers}</span> followers
-                </span>
-                <span className="text-sm">
-                  <span className="font-bold">{userData.following}</span> following
-                </span>
-              </div>
-              <p className="mt-4">{userData.bio}</p>
+            <div>
+              <h1 className="font-heading text-2xl font-extrabold text-black sm:text-3xl">
+                {state.profile.name}
+              </h1>
+              <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs font-medium text-[#2A3435]">
+                <span>@{state.profile.handle}</span>
+                <span aria-hidden="true">·</span>
+                {authUser ? (
+                  <span className="inline-flex items-center gap-1 text-[#175F27] font-semibold">
+                    <Cloud className="h-3.5 w-3.5" />
+                    {state.profile.email || authUser.email}
+                    {syncStatus === "syncing" ? " (Syncing...)" : " (Cloud Synced)"}
+                  </span>
+                ) : (
+                  <span>Local Study Desk</span>
+                )}
+              </p>
+              <p className="mt-2 max-w-xl text-sm text-[#1E2526]">
+                {state.profile.bio}
+              </p>
             </div>
           </div>
 
-          {/* Tabs */}
-          <Tabs defaultValue="personal" value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid grid-cols-2 md:grid-cols-5 mb-8">
-              <TabsTrigger value="personal" className="flex items-center gap-2">
-                <User size={16} /> Personal
-              </TabsTrigger>
-              <TabsTrigger value="heatmap" className="flex items-center gap-2">
-                <CalendarDays size={16} /> Activity
-              </TabsTrigger>
-              <TabsTrigger value="streak" className="flex items-center gap-2">
-                <Activity size={16} /> Progress
-              </TabsTrigger>
-              <TabsTrigger value="connections" className="flex items-center gap-2">
-                <Users size={16} /> Network
-              </TabsTrigger>
-              <TabsTrigger value="settings" className="flex items-center gap-2">
-                <Settings size={16} /> Settings
-              </TabsTrigger>
-            </TabsList>
-
-            {/* Personal Information */}
-            <TabsContent value="personal">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Personal Information</CardTitle>
-                  <CardDescription>Your profile details and skills</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <h3 className="font-medium mb-4">Contact Information</h3>
-                      <div className="space-y-2">
-                        <div className="grid grid-cols-3">
-                          <span className="text-gray-500">Full Name</span>
-                          <span className="col-span-2">{userData.name}</span>
-                        </div>
-                        <div className="grid grid-cols-3">
-                          <span className="text-gray-500">Email</span>
-                          <span className="col-span-2">{userData.email}</span>
-                        </div>
-                        <div className="grid grid-cols-3">
-                          <span className="text-gray-500">Location</span>
-                          <span className="col-span-2">{userData.location}</span>
-                        </div>
-                        <div className="grid grid-cols-3">
-                          <span className="text-gray-500">Joined</span>
-                          <span className="col-span-2">{userData.joinDate}</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <h3 className="font-medium mb-4">Skills</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {userData.skills.map((skill) => (
-                          <span 
-                            key={skill} 
-                            className="bg-seediq-100 text-seediq-800 rounded-full px-3 py-1 text-sm"
-                          >
-                            {skill}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Activity Heatmap */}
-            <TabsContent value="heatmap">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Activity Heatmap</CardTitle>
-                  <CardDescription>Your coding activity over the past year</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="p-6 bg-gray-50 rounded-lg">
-                    <div className="grid grid-cols-52 gap-1">
-                      {Array.from({ length: 52 * 7 }).map((_, i) => {
-                        // Generate random activity level (0-4) for demonstration
-                        const level = Math.floor(Math.random() * 5);
-                        const bgColor = level === 0 ? 'bg-gray-200' : 
-                                      level === 1 ? 'bg-seediq-100' : 
-                                      level === 2 ? 'bg-seediq-300' : 
-                                      level === 3 ? 'bg-seediq-500' : 'bg-seediq-700';
-                        return (
-                          <div 
-                            key={i} 
-                            className={`w-3 h-3 rounded-sm ${bgColor}`}
-                            title={`${level} contributions`}
-                          ></div>
-                        );
-                      })}
-                    </div>
-                    <div className="flex items-center justify-end mt-4 text-sm text-gray-600">
-                      <span>Less</span>
-                      <div className="flex gap-1 mx-2">
-                        <div className="w-3 h-3 bg-gray-200 rounded-sm"></div>
-                        <div className="w-3 h-3 bg-seediq-100 rounded-sm"></div>
-                        <div className="w-3 h-3 bg-seediq-300 rounded-sm"></div>
-                        <div className="w-3 h-3 bg-seediq-500 rounded-sm"></div>
-                        <div className="w-3 h-3 bg-seediq-700 rounded-sm"></div>
-                      </div>
-                      <span>More</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Progress and Streak */}
-            <TabsContent value="streak">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Learning Progress</CardTitle>
-                  <CardDescription>Track your learning journey and achievements</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <Card className="bg-seediq-50 border-none shadow-sm">
-                      <CardContent className="p-6">
-                        <h3 className="text-lg font-medium text-gray-800">Current Streak</h3>
-                        <div className="flex items-end gap-2 mt-2">
-                          <span className="text-4xl font-bold text-seediq-600">{userData.streak}</span>
-                          <span className="text-sm text-gray-600 mb-1">days</span>
-                        </div>
-                        <div className="mt-4 h-2 bg-gray-200 rounded-full overflow-hidden">
-                          <div className="bg-seediq-600 h-2 rounded-full" style={{ width: "47%" }}></div>
-                        </div>
-                        <p className="text-sm text-gray-600 mt-2">On track for 100 days</p>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card className="bg-seediq-50 border-none shadow-sm">
-                      <CardContent className="p-6">
-                        <h3 className="text-lg font-medium text-gray-800">Problems Solved</h3>
-                        <div className="flex items-end gap-2 mt-2">
-                          <span className="text-4xl font-bold text-seediq-600">{userData.totalSolved}</span>
-                          <span className="text-sm text-gray-600 mb-1">total</span>
-                        </div>
-                        <div className="flex items-center gap-2 mt-4">
-                          <span className="text-sm text-gray-600">Last 7 days:</span>
-                          <span className="text-sm font-medium">+12 problems</span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card className="bg-seediq-50 border-none shadow-sm">
-                      <CardContent className="p-6">
-                        <h3 className="text-lg font-medium text-gray-800">Completion Rate</h3>
-                        <div className="flex items-end gap-2 mt-2">
-                          <span className="text-4xl font-bold text-seediq-600">92%</span>
-                        </div>
-                        <div className="mt-4 h-2 bg-gray-200 rounded-full overflow-hidden">
-                          <div className="bg-seediq-600 h-2 rounded-full" style={{ width: "92%" }}></div>
-                        </div>
-                        <p className="text-sm text-gray-600 mt-2">Average completion rate</p>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Network - Followers/Following */}
-            <TabsContent value="connections">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Your Network</CardTitle>
-                  <CardDescription>People you follow and those who follow you</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div>
-                      <h3 className="text-lg font-medium mb-4">Followers ({userData.followers})</h3>
-                      <div className="space-y-4">
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <div key={i} className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-seediq-200 flex items-center justify-center">
-                              <span className="font-medium">{String.fromCharCode(65 + i)}</span>
-                            </div>
-                            <div>
-                              <h4 className="font-medium">User {String.fromCharCode(65 + i)}</h4>
-                              <p className="text-sm text-gray-600">Joined {2024 - i} days ago</p>
-                            </div>
-                          </div>
-                        ))}
-                        <button className="text-seediq-600 font-medium text-sm">View all followers</button>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <h3 className="text-lg font-medium mb-4">Following ({userData.following})</h3>
-                      <div className="space-y-4">
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <div key={i} className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                              <span className="font-medium">{String.fromCharCode(75 + i)}</span>
-                            </div>
-                            <div>
-                              <h4 className="font-medium">User {String.fromCharCode(75 + i)}</h4>
-                              <p className="text-sm text-gray-600">{5 + i} courses completed</p>
-                            </div>
-                          </div>
-                        ))}
-                        <button className="text-seediq-600 font-medium text-sm">View all following</button>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Account Settings */}
-            <TabsContent value="settings">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Account Settings</CardTitle>
-                  <CardDescription>Manage your account preferences and settings</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-6">
-                    <div>
-                      <h3 className="text-lg font-medium mb-4">Profile Settings</h3>
-                      <Table>
-                        <TableBody>
-                          <TableRow>
-                            <TableCell className="font-medium">Profile Visibility</TableCell>
-                            <TableCell>Public</TableCell>
-                            <TableCell className="text-right">
-                              <button className="text-seediq-600">Change</button>
-                            </TableCell>
-                          </TableRow>
-                          <TableRow>
-                            <TableCell className="font-medium">Email Notifications</TableCell>
-                            <TableCell>Enabled</TableCell>
-                            <TableCell className="text-right">
-                              <button className="text-seediq-600">Manage</button>
-                            </TableCell>
-                          </TableRow>
-                          <TableRow>
-                            <TableCell className="font-medium">Two-Factor Authentication</TableCell>
-                            <TableCell>Disabled</TableCell>
-                            <TableCell className="text-right">
-                              <button className="text-seediq-600">Enable</button>
-                            </TableCell>
-                          </TableRow>
-                          <TableRow>
-                            <TableCell className="font-medium">Connected Accounts</TableCell>
-                            <TableCell>GitHub, LinkedIn</TableCell>
-                            <TableCell className="text-right">
-                              <button className="text-seediq-600">Manage</button>
-                            </TableCell>
-                          </TableRow>
-                        </TableBody>
-                      </Table>
-                    </div>
-                    
-                    <div>
-                      <h3 className="text-lg font-medium mb-4">Privacy & Security</h3>
-                      <Table>
-                        <TableBody>
-                          <TableRow>
-                            <TableCell className="font-medium">Password</TableCell>
-                            <TableCell>Last changed 3 months ago</TableCell>
-                            <TableCell className="text-right">
-                              <button className="text-seediq-600">Change</button>
-                            </TableCell>
-                          </TableRow>
-                          <TableRow>
-                            <TableCell className="font-medium">Login History</TableCell>
-                            <TableCell>View recent login attempts</TableCell>
-                            <TableCell className="text-right">
-                              <button className="text-seediq-600">View</button>
-                            </TableCell>
-                          </TableRow>
-                          <TableRow>
-                            <TableCell className="font-medium">Data & Privacy</TableCell>
-                            <TableCell>Manage your data</TableCell>
-                            <TableCell className="text-right">
-                              <button className="text-seediq-600">Manage</button>
-                            </TableCell>
-                          </TableRow>
-                          <TableRow>
-                            <TableCell className="font-medium">Delete Account</TableCell>
-                            <TableCell>Permanently delete your account</TableCell>
-                            <TableCell className="text-right">
-                              <button className="text-destructive">Delete</button>
-                            </TableCell>
-                          </TableRow>
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+          <div className="flex flex-wrap gap-3 shrink-0">
+            {authUser ? (
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="inline-flex items-center gap-2 rounded-lg bg-black px-4 py-2.5 text-xs font-semibold text-[#D6E3E4] hover:bg-[#1E2525]"
+              >
+                <LogOut className="h-4 w-4" />
+                Sign Out
+              </button>
+            ) : (
+              <Link
+                to="/auth"
+                className="inline-flex items-center gap-2 rounded-lg bg-black px-4 py-2.5 text-xs font-semibold text-[#F6FF81] hover:bg-[#1E2525]"
+              >
+                <LogIn className="h-4 w-4" />
+                Sign In with Google
+              </Link>
+            )}
+          </div>
         </div>
-      </main>
-      <Footer />
-    </div>
+
+        {/* Real Tracked Stats */}
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          <div className="rounded-xl border border-[#232929] bg-[#0B0D0D] p-5">
+            <p className="text-xs text-[#94A3A5]">Current Streak</p>
+            <p className="mt-2 flex items-center gap-2 font-heading text-3xl font-bold tabular-nums text-[#F6FF81]">
+              {streak}
+              <Flame className="h-5 w-5" />
+            </p>
+          </div>
+          <div className="rounded-xl border border-[#232929] bg-[#0B0D0D] p-5">
+            <p className="text-xs text-[#94A3A5]">Study Actions</p>
+            <p className="mt-2 font-heading text-3xl font-bold tabular-nums text-[#D6E3E4]">
+              {totalSessions}
+            </p>
+          </div>
+          <div className="rounded-xl border border-[#232929] bg-[#0B0D0D] p-5">
+            <p className="text-xs text-[#94A3A5]">Milestones Done</p>
+            <p className="mt-2 font-heading text-3xl font-bold tabular-nums text-[#31CB53]">
+              {completedMilestones}
+            </p>
+          </div>
+          <div className="rounded-xl border border-[#232929] bg-[#0B0D0D] p-5">
+            <p className="text-xs text-[#94A3A5]">Saved Notes</p>
+            <p className="mt-2 font-heading text-3xl font-bold tabular-nums text-[#D6E3E4]">
+              {state.notes.length}
+            </p>
+          </div>
+        </div>
+
+        {/* Deterministic Activity Heatmap */}
+        <section className="rounded-xl border border-[#232929] bg-[#0B0D0D] p-6">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="font-heading text-lg font-bold text-[#D6E3E4]">
+                Study Activity (Last 16 Weeks)
+              </h2>
+              <p className="text-xs text-[#94A3A5]">
+                Updates automatically whenever you complete milestones, take quizzes, or write notes.
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-[#94A3A5]">
+              <span>Less</span>
+              <span className="h-3 w-3 rounded-sm bg-[#161B1B]" />
+              <span className="h-3 w-3 rounded-sm bg-[#144721]" />
+              <span className="h-3 w-3 rounded-sm bg-[#218738]" />
+              <span className="h-3 w-3 rounded-sm bg-[#31CB53]" />
+              <span className="h-3 w-3 rounded-sm bg-[#F6FF81]" />
+              <span>More</span>
+            </div>
+          </div>
+
+          <div className="mt-5 overflow-x-auto">
+            <div className="inline-flex gap-1.5">
+              {heatmapWeeks.map((week, wIdx) => (
+                <div key={wIdx} className="flex flex-col gap-1.5">
+                  {week.map((cell) => {
+                    const colorClass =
+                      cell.level === 0
+                        ? "bg-[#161B1B]"
+                        : cell.level === 1
+                        ? "bg-[#144721]"
+                        : cell.level === 2
+                        ? "bg-[#218738]"
+                        : cell.level === 3
+                        ? "bg-[#31CB53]"
+                        : "bg-[#F6FF81]";
+                    return (
+                      <div
+                        key={cell.date}
+                        title={`${cell.date}: ${cell.count} study actions`}
+                        className={`h-4 w-4 rounded-sm ${colorClass}`}
+                      />
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Goal Progress Overview + Editable Preferences */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          <section className="lg:col-span-6 rounded-xl border border-[#232929] bg-[#0B0D0D] p-6">
+            <h2 className="font-heading text-lg font-bold text-[#D6E3E4]">
+              Goal Progress Summary
+            </h2>
+            <div className="mt-4 space-y-4">
+              {state.goals.map((g) => {
+                const p = calculateGoalProgress(g.milestones);
+                return (
+                  <div key={g.id}>
+                    <div className="flex items-center justify-between text-xs">
+                      <Link
+                        to={`/skillup/${g.id}`}
+                        className="font-medium text-[#D6E3E4] hover:text-[#31CB53]"
+                      >
+                        {g.title}
+                      </Link>
+                      <span className="font-mono tabular-nums text-[#94A3A5]">
+                        {p.completed}/{p.total} ({p.percentage}%)
+                      </span>
+                    </div>
+                    <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-[#1A2020]">
+                      <div
+                        className="h-full rounded-full bg-[#31CB53]"
+                        style={{ width: `${p.percentage}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="lg:col-span-6 rounded-xl border border-[#232929] bg-[#0B0D0D] p-6">
+            <h2 className="font-heading text-lg font-bold text-[#D6E3E4]">
+              Desk Preferences
+            </h2>
+            <form onSubmit={handleSaveProfile} className="mt-4 space-y-4">
+              <div>
+                <label
+                  htmlFor="profile-name"
+                  className="block text-xs font-medium text-[#94A3A5]"
+                >
+                  Display Name
+                </label>
+                <input
+                  id="profile-name"
+                  type="text"
+                  maxLength={80}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="mt-1.5 w-full rounded-lg border border-[#232929] bg-black px-3.5 py-2 text-sm text-[#D6E3E4] focus:border-[#31CB53] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="profile-bio"
+                  className="block text-xs font-medium text-[#94A3A5]"
+                >
+                  Learning Mission
+                </label>
+                <textarea
+                  id="profile-bio"
+                  rows={2}
+                  maxLength={300}
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  className="mt-1.5 w-full rounded-lg border border-[#232929] bg-black px-3.5 py-2 text-sm text-[#D6E3E4] focus:border-[#31CB53] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="profile-target"
+                  className="block text-xs font-medium text-[#94A3A5]"
+                >
+                  Daily Target (minutes)
+                </label>
+                <input
+                  id="profile-target"
+                  type="number"
+                  min={10}
+                  max={240}
+                  value={dailyTargetMinutes}
+                  onChange={(e) =>
+                    setDailyTargetMinutes(Number(e.target.value) || 45)
+                  }
+                  className="mt-1.5 w-32 rounded-lg border border-[#232929] bg-black px-3.5 py-2 text-sm font-mono tabular-nums text-[#D6E3E4] focus:border-[#31CB53] focus:outline-none"
+                />
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                <button
+                  type="submit"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#31CB53] px-5 py-2.5 text-xs font-semibold text-black hover:bg-[#29b347]"
+                >
+                  <Check className="h-3.5 w-3.5" />
+                  Save Preferences
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isResetting}
+                  onClick={handleReset}
+                  className="inline-flex items-center gap-1.5 text-xs text-[#94A3A5] hover:text-[#F6FF81] disabled:opacity-50"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  {isResetting ? "Resetting..." : "Reset Starter Paths"}
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      </div>
+    </AppShell>
   );
 };
 

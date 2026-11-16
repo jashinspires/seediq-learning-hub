@@ -1,41 +1,40 @@
-
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/providers/AuthProvider";
-import Index from "./pages/Index";
+import { StudyProvider } from "@/store/StudyContext";
+import HomeDashboard from "./pages/HomeDashboard";
 import SkillUp from "./pages/SkillUp";
-import Workspace from "./pages/Workspace";
-import Community from "./pages/Community";
+import AIStudio from "./pages/AIStudio";
+import Practice from "./pages/Practice";
+import Notes from "./pages/Notes";
 import Profile from "./pages/Profile";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
-// Create a QueryClient instance outside of the component
-const queryClient = new QueryClient();
-
-const App = () => {
+const App: React.FC = () => {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <AuthProvider>
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/skillup" element={<SkillUp />} />
-              <Route path="/workspace" element={<Workspace />} />
-              <Route path="/community" element={<Community />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </AuthProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <StudyProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<HomeDashboard />} />
+            <Route path="/skillup" element={<SkillUp />} />
+            <Route path="/skillup/:goalId" element={<SkillUp />} />
+            <Route path="/ai-tutor" element={<AIStudio />} />
+            <Route path="/workspace" element={<AIStudio />} />
+            <Route path="/practice" element={<Practice />} />
+            <Route path="/notes" element={<Notes />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </StudyProvider>
+    </TooltipProvider>
   );
 };
 

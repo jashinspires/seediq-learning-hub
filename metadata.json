@@ -1,0 +1,8 @@
+{
+  "name": "SeedIQ",
+  "description": "Personal study space with curated free learning paths, AI study partner, active self-testing, and study notebook.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

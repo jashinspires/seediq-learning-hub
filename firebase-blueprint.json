@@ -1,0 +1,516 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Private learner desk profile, daily focus task, and study settings owned by a single user.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Authenticated Firebase UID owning this study desk."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80,
+          "description": "Learner display name."
+        },
+        "handle": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 50,
+          "pattern": "^[a-z0-9\\-]+$",
+          "description": "Normalized learner handle."
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 160,
+          "description": "Authenticated learner email (private PII, owner-only)."
+        },
+        "bio": {
+          "type": "string",
+          "maxLength": 300,
+          "description": "Learner mission statement."
+        },
+        "dailyFocusTask": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "Single daily focus objective shown on Command Center."
+        },
+        "dailyFocusCompleted": {
+          "type": "boolean",
+          "description": "Whether today's focus objective is checked off."
+        },
+        "dailyTargetMinutes": {
+          "type": "integer",
+          "description": "Target daily study minutes between 10 and 240."
+        },
+        "activeThreadId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Currently selected AI study session ID."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when user desk was initialized."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of the last profile update."
+        }
+      },
+      "required": [
+        "userId",
+        "name",
+        "handle",
+        "email",
+        "bio",
+        "dailyFocusTask",
+        "dailyFocusCompleted",
+        "dailyTargetMinutes",
+        "activeThreadId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "StudyGoal": {
+      "title": "StudyGoal",
+      "description": "Personal learning goal with bounded milestones and curated free resources.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Owner Firebase UID."
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Goal document ID."
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120,
+          "description": "Goal title."
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "Computer Science",
+            "Web Engineering",
+            "AI & Math",
+            "Languages",
+            "System Design",
+            "Custom"
+          ],
+          "description": "Goal category."
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "Short goal summary."
+        },
+        "weeklyHoursTarget": {
+          "type": "integer",
+          "description": "Weekly target hours between 1 and 40."
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Whether the goal is pinned on the home dashboard."
+        },
+        "createdAt": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 30,
+          "description": "ISO date label for display."
+        },
+        "milestones": {
+          "type": "array",
+          "description": "Bounded list of milestones (max 30)."
+        },
+        "serverCreatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "serverUpdatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": [
+        "userId",
+        "id",
+        "title",
+        "category",
+        "description",
+        "weeklyHoursTarget",
+        "isActive",
+        "createdAt",
+        "milestones",
+        "serverCreatedAt",
+        "serverUpdatedAt"
+      ]
+    },
+    "StudyNote": {
+      "title": "StudyNote",
+      "description": "Markdown-friendly personal study note linked to an optional goal.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140
+        },
+        "content": {
+          "type": "string",
+          "maxLength": 20000
+        },
+        "goalId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "tags": {
+          "type": "array",
+          "description": "Bounded list of up to 10 tags."
+        },
+        "updatedAt": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 30
+        },
+        "serverCreatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "serverUpdatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "userId",
+        "id",
+        "title",
+        "content",
+        "tags",
+        "updatedAt",
+        "serverCreatedAt",
+        "serverUpdatedAt"
+      ]
+    },
+    "ChatThread": {
+      "title": "ChatThread",
+      "description": "AI Study Partner session header with tutor mode and optional goal link.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "goalId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["explain", "socratic", "debug", "quiz-me"]
+        },
+        "updatedAt": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 30
+        },
+        "serverCreatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "serverUpdatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "userId",
+        "id",
+        "title",
+        "mode",
+        "updatedAt",
+        "serverCreatedAt",
+        "serverUpdatedAt"
+      ]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "Individual study chat message stored in a subcollection under a ChatThread (images excluded to stay under 1MB).",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["user", "assistant"]
+        },
+        "content": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20000
+        },
+        "hasImage": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 30
+        },
+        "serverCreatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "userId",
+        "id",
+        "role",
+        "content",
+        "hasImage",
+        "createdAt",
+        "serverCreatedAt"
+      ]
+    },
+    "Flashcard": {
+      "title": "Flashcard",
+      "description": "Spaced-recall flashcard owned by a learner.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "topicId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "front": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "back": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1500
+        },
+        "mastered": {
+          "type": "boolean"
+        },
+        "serverCreatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "serverUpdatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "userId",
+        "id",
+        "topicId",
+        "front",
+        "back",
+        "mastered",
+        "serverCreatedAt",
+        "serverUpdatedAt"
+      ]
+    },
+    "QuizAttempt": {
+      "title": "QuizAttempt",
+      "description": "Completed self-test quiz summary for learner history.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "topicId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "topicTitle": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140
+        },
+        "correct": {
+          "type": "integer"
+        },
+        "total": {
+          "type": "integer"
+        },
+        "percentage": {
+          "type": "integer"
+        },
+        "completedAt": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 30
+        },
+        "serverCreatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "userId",
+        "id",
+        "topicId",
+        "topicTitle",
+        "correct",
+        "total",
+        "percentage",
+        "completedAt",
+        "serverCreatedAt"
+      ]
+    },
+    "ActivityDay": {
+      "title": "ActivityDay",
+      "description": "Daily study action counter keyed by YYYY-MM-DD for streak and heatmap tracking.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "date": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 10,
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+        },
+        "count": {
+          "type": "integer"
+        },
+        "serverCreatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "serverUpdatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "userId",
+        "date",
+        "count",
+        "serverCreatedAt",
+        "serverUpdatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Private owner-only user profile and desk settings."
+    },
+    "/users/{userId}/goals/{goalId}": {
+      "schema": { "$ref": "#/entities/StudyGoal" },
+      "description": "Learning goals and bounded milestones belonging to a user."
+    },
+    "/users/{userId}/notes/{noteId}": {
+      "schema": { "$ref": "#/entities/StudyNote" },
+      "description": "Personal study notes belonging to a user."
+    },
+    "/users/{userId}/threads/{threadId}": {
+      "schema": { "$ref": "#/entities/ChatThread" },
+      "description": "AI Study Partner conversation threads belonging to a user."
+    },
+    "/users/{userId}/threads/{threadId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/ChatMessage" },
+      "description": "Messages inside an AI Study Partner thread."
+    },
+    "/users/{userId}/flashcards/{cardId}": {
+      "schema": { "$ref": "#/entities/Flashcard" },
+      "description": "Spaced-recall flashcards belonging to a user."
+    },
+    "/users/{userId}/quizAttempts/{attemptId}": {
+      "schema": { "$ref": "#/entities/QuizAttempt" },
+      "description": "Self-test quiz attempt summaries belonging to a user."
+    },
+    "/users/{userId}/activityDays/{dateId}": {
+      "schema": { "$ref": "#/entities/ActivityDay" },
+      "description": "Daily study activity counts powering streaks and heatmaps."
+    }
+  }
+}

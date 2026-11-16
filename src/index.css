@@ -1,79 +1,38 @@
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 0 0% 0%;
+    --foreground: 184 18% 87%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 0 0% 5%;
+    --card-foreground: 184 18% 87%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 6%;
+    --popover-foreground: 184 18% 87%;
 
-    --primary: 252 73% 65%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 133 61% 49%;
+    --primary-foreground: 0 0% 0%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 180 4% 86%;
+    --secondary-foreground: 0 0% 0%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 180 6% 12%;
+    --muted-foreground: 183 11% 62%;
 
-    --accent: 252 73% 65%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 64 100% 75%;
+    --accent-foreground: 0 0% 0%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 252 73% 65%;
+    --border: 180 6% 16%;
+    --input: 180 6% 16%;
+    --ring: 133 61% 49%;
 
     --radius: 0.75rem;
-    
-    /* Dark theme vars for SeedIQ Workspace */
-    --seediq-dark-bg: 224 15% 8%;
-    --seediq-dark-surface: 225 14% 10%;
-    --seediq-dark-border: 226 15% 18%;
-    --seediq-dark-text: 210 40% 98%;
-    --seediq-dark-text-secondary: 214 32% 75%;
-    --seediq-primary: 252 73% 65%;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 252 73% 65%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 252 73% 65%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
   }
 }
 
@@ -82,62 +41,47 @@
     @apply border-border;
   }
 
+  html {
+    background-color: #000000;
+    color: #D6E3E4;
+  }
+
   body {
-    @apply bg-background text-foreground font-sans;
+    background-color: #000000;
+    color: #D6E3E4;
+    font-family: "DM Sans", system-ui, sans-serif;
+    line-height: 1.55;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-heading font-semibold;
+    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.02em;
   }
 }
 
-.card-shadow {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
 
-.card-hover {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+.headline-balance {
+  text-wrap: balance;
 }
 
-.card-hover:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-}
-
-.hero-pattern {
-  background-color: #f8fafc;
-  background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23d1d5db' fill-opacity='0.15' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='3'/%3E%3Ccircle cx='13' cy='13' r='3'/%3E%3C/g%3E%3C/svg%3E");
-}
-
-/* Grid for activity heatmap - 52 weeks in a year */
-.grid-cols-52 {
-  grid-template-columns: repeat(52, minmax(0, 1fr));
-}
-
-/* Custom scrollbar for the app */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 7px;
+  height: 7px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: #000000;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
+  background: #232828;
+  border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-/* Glassmorphism effects */
-.glass-panel {
-  @apply backdrop-blur-lg bg-white/5 border border-white/10;
-}
-
-/* Gradient text */
-.gradient-text {
-  @apply bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-transparent;
+  background: #384242;
 }

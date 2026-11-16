@@ -1,73 +1,105 @@
+# SeedIQ
 
+**A personal study desk for deep focus.**
 
-## Project info
+SeedIQ is a minimal, distraction-free learning workspace designed to feel like your own notebook and study table—not another noisy course marketplace. Open it and start studying right away with zero splash screens and zero forced login walls.
 
-**URL**: https://lovable.dev/projects/0417821d-cc51-4d90-bfc9-3afdddb144b1
+---
 
-## How can I edit this code?
+## How the Study Loop Works
 
-There are several ways of editing your application.
+SeedIQ keeps your daily learning simple across five connected spaces:
 
-**Use Lovable**
+1. **Personal Command Center (`/`)**  
+   Pick one daily focus objective, track your active learning streak, and jump straight back into your current goal, AI session, or latest note.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/0417821d-cc51-4d90-bfc9-3afdddb144b1) and start prompting.
+2. **Learning Paths & Custom Goals (`/skillup`)**  
+   Study from curated free resources (MIT OpenCourseWare, React Docs, 3Blue1Brown, VisuAlgo, Tofugu, and more) organized into checkable milestones—or create your own custom study track in seconds.
 
-Changes made via Lovable will be committed automatically to this repo.
+3. **AI Study Partner (`/ai-tutor`)**  
+   Ask questions, switch coaching modes (*Guided Breakdown*, *Socratic Coach*, *Debug & Review*, *Concept Check*), link a goal for context, upload problem screenshots, and save helpful explanations directly into your notebook.
 
-**Use your preferred IDE**
+4. **Active Self-Testing (`/practice`)**  
+   Test what you actually remember with topic quizzes, instant AI-generated practice checks, and spaced-recall flashcards.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+5. **Personal Notebook & Activity Heatmap (`/notes`, `/profile`)**  
+   Jot down takeaways alongside your goals, search across notes and tags, and see your real study consistency across a 16-week activity grid.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+---
 
-Follow these steps:
+## Local Desk + Cloud Sync
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+- **Start immediately:** Everything works locally in your browser out of the box via `localStorage`.
+- **Sync across devices:** Sign in with Google on `/auth` or `/profile` to back up your goals, milestones, notes, flashcards, quiz history, and study streaks to Cloud Firestore.
+- **Private by design:** User data lives under owner-scoped `/users/{userId}` documents protected by strict Firestore security rules (`firestore.rules`).
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+---
 
-# Step 3: Install the necessary dependencies.
-npm i
+## Tech Stack
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+- **Frontend:** React 18, TypeScript, Vite, Tailwind CSS, Lucide Icons
+- **Backend API:** Express 5 (`server.ts`) handling server-side Gemini study assistance (`/api/ai/chat`, `/api/ai/quiz`)
+- **Auth & Database:** Firebase Authentication (Google Sign-In) & Cloud Firestore
+
+---
+
+## Getting Started
+
+### 1. Install dependencies
+
+```bash
+npm install
+```
+
+### 2. Configure environment variables
+
+Copy `.env.example` to `.env` and add your Gemini API key (used on the server for AI Studio and quiz generation):
+
+```bash
+cp .env.example .env
+```
+
+```env
+GEMINI_API_KEY=your_api_key_here
+```
+
+Firebase client settings live in `firebase-applet-config.json`.
+
+### 3. Run the app
+
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The app and API server run together on **`http://localhost:3000`**.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+---
 
-**Use GitHub Codespaces**
+## Useful Scripts
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```bash
+npm run dev       # Start Express + Vite dev server on port 3000
+npm run build     # Build the production frontend bundle
+npm run start     # Run the production server
+npm run lint      # Run ESLint across TypeScript files and firestore.rules
+npx tsx --test src/lib/studyLogic.test.ts firestore.rules.test.ts  # Run unit & rule-invariant tests
+```
 
-## What technologies are used for this project?
+---
 
-This project is built with:
+## Project Structure
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/0417821d-cc51-4d90-bfc9-3afdddb144b1) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+```text
+├── server.ts                  # Express server + Vite middleware & AI endpoints
+├── firestore.rules            # Owner-isolated Firestore security rules
+├── firebase-blueprint.json    # Data schema blueprint for Firestore entities
+├── src/
+│   ├── data/seedData.ts       # Starter learning paths, flashcards, quizzes, notes
+│   ├── lib/
+│   │   ├── firebase.ts        # Firebase Auth & Firestore initialization
+│   │   ├── firestoreSanitizer.ts # Payload validation & clamping helpers
+│   │   ├── studyLogic.ts      # Pure streak, heatmap, progress & quiz logic
+│   │   └── studyTypes.ts      # Shared TypeScript interfaces
+│   ├── store/StudyContext.tsx # Local + real-time Firestore workspace sync
+│   └── pages/                 # HomeDashboard, SkillUp, AIStudio, Practice, Notes, Profile, Auth
+```

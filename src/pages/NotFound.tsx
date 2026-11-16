@@ -1,37 +1,36 @@
+import React from "react";
+import { Link } from "react-router-dom";
+import { AppShell } from "@/components/layout/AppShell";
 
-import { useLocation, Link } from "react-router-dom";
-import { useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-
-const NotFound = () => {
-  const location = useLocation();
-
-  useEffect(() => {
-    console.error(
-      "404 Error: User attempted to access non-existent route:",
-      location.pathname
-    );
-  }, [location.pathname]);
-
+const NotFound: React.FC = () => {
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
-      <main className="flex-grow flex items-center justify-center bg-gray-50 py-16">
-        <div className="container mx-auto px-4 text-center">
-          <div className="inline-block text-seediq-600 text-9xl font-bold mb-6">404</div>
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Page Not Found</h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-md mx-auto">
-            We couldn't find the page you were looking for. It might have been removed, renamed, or doesn't exist.
-          </p>
-          <Button size="lg" asChild>
-            <Link to="/">Back to Home</Link>
-          </Button>
+    <AppShell>
+      <div className="mx-auto flex max-w-3xl flex-col items-center justify-center px-4 py-24 text-center sm:px-6">
+        <span className="font-mono text-6xl font-extrabold text-[#F6FF81] tabular-nums">
+          404
+        </span>
+        <h1 className="mt-4 font-heading text-3xl font-bold text-[#D6E3E4]">
+          This study page doesn&apos;t exist
+        </h1>
+        <p className="mt-2 max-w-md text-sm text-[#94A3A5]">
+          Head back to your personal study desk or open one of your learning paths.
+        </p>
+        <div className="mt-6 flex gap-3">
+          <Link
+            to="/"
+            className="rounded-lg bg-[#31CB53] px-5 py-2.5 text-sm font-semibold text-black hover:bg-[#29b347]"
+          >
+            Back to Desk
+          </Link>
+          <Link
+            to="/skillup"
+            className="rounded-lg border border-[#232929] px-5 py-2.5 text-sm font-medium text-[#D6E3E4] hover:border-[#D6E3E4]"
+          >
+            Browse Paths
+          </Link>
         </div>
-      </main>
-      <Footer />
-    </div>
+      </div>
+    </AppShell>
   );
 };
 

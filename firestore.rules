@@ -1,0 +1,696 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global safety net: default-deny all unspecified paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // Global Hardened Primitives
+    // -------------------------------------------------------------------------
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isVerifiedOwner(userId) {
+      return isOwner(userId) && isVerified();
+    }
+
+    function isValidId(id) {
+      return id is string &&
+        id.size() >= 1 &&
+        id.size() <= 128 &&
+        id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function userDocExists(userId) {
+      return exists(/databases/$(database)/documents/users/$(userId));
+    }
+
+    function userDocExistsAfter(userId) {
+      return existsAfter(/databases/$(database)/documents/users/$(userId));
+    }
+
+    function threadDocExists(userId, threadId) {
+      return exists(/databases/$(database)/documents/users/$(userId)/threads/$(threadId));
+    }
+
+    function threadDocExistsAfter(userId, threadId) {
+      return existsAfter(/databases/$(database)/documents/users/$(userId)/threads/$(threadId));
+    }
+
+    // -------------------------------------------------------------------------
+    // Validation Blueprints (Anti-Update-Gap)
+    // -------------------------------------------------------------------------
+    function isValidUserProfile(data, userId) {
+      return data.keys().hasAll([
+          'userId',
+          'name',
+          'handle',
+          'email',
+          'bio',
+          'dailyFocusTask',
+          'dailyFocusCompleted',
+          'dailyTargetMinutes',
+          'activeThreadId',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'userId',
+          'name',
+          'handle',
+          'email',
+          'bio',
+          'dailyFocusTask',
+          'dailyFocusCompleted',
+          'dailyTargetMinutes',
+          'activeThreadId',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.userId is string &&
+        data.userId == userId &&
+        isValidId(data.userId) &&
+        data.name is string &&
+        data.name.size() >= 1 &&
+        data.name.size() <= 80 &&
+        data.handle is string &&
+        data.handle.size() >= 1 &&
+        data.handle.size() <= 50 &&
+        data.handle.matches('^[a-z0-9\\-]+$') &&
+        data.email is string &&
+        data.email.size() <= 160 &&
+        data.bio is string &&
+        data.bio.size() <= 300 &&
+        data.dailyFocusTask is string &&
+        data.dailyFocusTask.size() >= 1 &&
+        data.dailyFocusTask.size() <= 200 &&
+        data.dailyFocusCompleted is bool &&
+        data.dailyTargetMinutes is int &&
+        data.dailyTargetMinutes >= 10 &&
+        data.dailyTargetMinutes <= 240 &&
+        data.activeThreadId is string &&
+        (data.activeThreadId == '' || isValidId(data.activeThreadId)) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidStudyGoal(data, userId, goalId) {
+      return data.keys().hasAll([
+          'userId',
+          'id',
+          'title',
+          'category',
+          'description',
+          'weeklyHoursTarget',
+          'isActive',
+          'createdAt',
+          'milestones',
+          'serverCreatedAt',
+          'serverUpdatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'userId',
+          'id',
+          'title',
+          'category',
+          'description',
+          'weeklyHoursTarget',
+          'isActive',
+          'createdAt',
+          'milestones',
+          'serverCreatedAt',
+          'serverUpdatedAt'
+        ]) &&
+        data.userId is string &&
+        data.userId == userId &&
+        isValidId(data.userId) &&
+        data.id is string &&
+        data.id == goalId &&
+        isValidId(data.id) &&
+        data.title is string &&
+        data.title.size() >= 1 &&
+        data.title.size() <= 120 &&
+        data.category in [
+          'Computer Science',
+          'Web Engineering',
+          'AI & Math',
+          'Languages',
+          'System Design',
+          'Custom'
+        ] &&
+        data.description is string &&
+        data.description.size() <= 500 &&
+        data.weeklyHoursTarget is int &&
+        data.weeklyHoursTarget >= 1 &&
+        data.weeklyHoursTarget <= 40 &&
+        data.isActive is bool &&
+        data.createdAt is string &&
+        data.createdAt.size() >= 4 &&
+        data.createdAt.size() <= 30 &&
+        data.milestones is list &&
+        data.milestones.size() <= 30 &&
+        (data.milestones.size() == 0 || data.milestones[0] is map) &&
+        data.serverCreatedAt is timestamp &&
+        data.serverUpdatedAt is timestamp;
+    }
+
+    function isValidStudyNote(data, userId, noteId) {
+      return data.keys().hasAll([
+          'userId',
+          'id',
+          'title',
+          'content',
+          'tags',
+          'updatedAt',
+          'serverCreatedAt',
+          'serverUpdatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'userId',
+          'id',
+          'title',
+          'content',
+          'goalId',
+          'tags',
+          'updatedAt',
+          'serverCreatedAt',
+          'serverUpdatedAt'
+        ]) &&
+        data.userId is string &&
+        data.userId == userId &&
+        isValidId(data.userId) &&
+        data.id is string &&
+        data.id == noteId &&
+        isValidId(data.id) &&
+        data.title is string &&
+        data.title.size() >= 1 &&
+        data.title.size() <= 140 &&
+        data.content is string &&
+        data.content.size() <= 20000 &&
+        (!('goalId' in data) || isValidId(data.goalId)) &&
+        data.tags is list &&
+        data.tags.size() <= 10 &&
+        (data.tags.size() == 0 || (data.tags[0] is string && data.tags[0].size() <= 40)) &&
+        data.updatedAt is string &&
+        data.updatedAt.size() >= 4 &&
+        data.updatedAt.size() <= 30 &&
+        data.serverCreatedAt is timestamp &&
+        data.serverUpdatedAt is timestamp;
+    }
+
+    function isValidChatThread(data, userId, threadId) {
+      return data.keys().hasAll([
+          'userId',
+          'id',
+          'title',
+          'mode',
+          'updatedAt',
+          'serverCreatedAt',
+          'serverUpdatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'userId',
+          'id',
+          'title',
+          'goalId',
+          'mode',
+          'updatedAt',
+          'serverCreatedAt',
+          'serverUpdatedAt'
+        ]) &&
+        data.userId is string &&
+        data.userId == userId &&
+        isValidId(data.userId) &&
+        data.id is string &&
+        data.id == threadId &&
+        isValidId(data.id) &&
+        data.title is string &&
+        data.title.size() >= 1 &&
+        data.title.size() <= 120 &&
+        (!('goalId' in data) || isValidId(data.goalId)) &&
+        data.mode in ['explain', 'socratic', 'debug', 'quiz-me'] &&
+        data.updatedAt is string &&
+        data.updatedAt.size() >= 4 &&
+        data.updatedAt.size() <= 30 &&
+        data.serverCreatedAt is timestamp &&
+        data.serverUpdatedAt is timestamp;
+    }
+
+    function isValidChatMessage(data, userId, messageId) {
+      return data.keys().hasAll([
+          'userId',
+          'id',
+          'role',
+          'content',
+          'hasImage',
+          'createdAt',
+          'serverCreatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'userId',
+          'id',
+          'role',
+          'content',
+          'hasImage',
+          'createdAt',
+          'serverCreatedAt'
+        ]) &&
+        data.userId is string &&
+        data.userId == userId &&
+        isValidId(data.userId) &&
+        data.id is string &&
+        data.id == messageId &&
+        isValidId(data.id) &&
+        data.role in ['user', 'assistant'] &&
+        data.content is string &&
+        data.content.size() >= 1 &&
+        data.content.size() <= 20000 &&
+        data.hasImage is bool &&
+        data.createdAt is string &&
+        data.createdAt.size() >= 4 &&
+        data.createdAt.size() <= 30 &&
+        data.serverCreatedAt is timestamp;
+    }
+
+    function isValidFlashcard(data, userId, cardId) {
+      return data.keys().hasAll([
+          'userId',
+          'id',
+          'topicId',
+          'front',
+          'back',
+          'mastered',
+          'serverCreatedAt',
+          'serverUpdatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'userId',
+          'id',
+          'topicId',
+          'front',
+          'back',
+          'mastered',
+          'serverCreatedAt',
+          'serverUpdatedAt'
+        ]) &&
+        data.userId is string &&
+        data.userId == userId &&
+        isValidId(data.userId) &&
+        data.id is string &&
+        data.id == cardId &&
+        isValidId(data.id) &&
+        data.topicId is string &&
+        isValidId(data.topicId) &&
+        data.front is string &&
+        data.front.size() >= 1 &&
+        data.front.size() <= 500 &&
+        data.back is string &&
+        data.back.size() >= 1 &&
+        data.back.size() <= 1500 &&
+        data.mastered is bool &&
+        data.serverCreatedAt is timestamp &&
+        data.serverUpdatedAt is timestamp;
+    }
+
+    function isValidQuizAttempt(data, userId, attemptId) {
+      return data.keys().hasAll([
+          'userId',
+          'id',
+          'topicId',
+          'topicTitle',
+          'correct',
+          'total',
+          'percentage',
+          'completedAt',
+          'serverCreatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'userId',
+          'id',
+          'topicId',
+          'topicTitle',
+          'correct',
+          'total',
+          'percentage',
+          'completedAt',
+          'serverCreatedAt'
+        ]) &&
+        data.userId is string &&
+        data.userId == userId &&
+        isValidId(data.userId) &&
+        data.id is string &&
+        data.id == attemptId &&
+        isValidId(data.id) &&
+        data.topicId is string &&
+        isValidId(data.topicId) &&
+        data.topicTitle is string &&
+        data.topicTitle.size() >= 1 &&
+        data.topicTitle.size() <= 140 &&
+        data.total is int &&
+        data.total >= 1 &&
+        data.total <= 100 &&
+        data.correct is int &&
+        data.correct >= 0 &&
+        data.correct <= data.total &&
+        data.percentage is int &&
+        data.percentage >= 0 &&
+        data.percentage <= 100 &&
+        data.completedAt is string &&
+        data.completedAt.size() >= 4 &&
+        data.completedAt.size() <= 30 &&
+        data.serverCreatedAt is timestamp;
+    }
+
+    function isValidActivityDay(data, userId, dateId) {
+      return data.keys().hasAll([
+          'userId',
+          'date',
+          'count',
+          'serverCreatedAt',
+          'serverUpdatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'userId',
+          'date',
+          'count',
+          'serverCreatedAt',
+          'serverUpdatedAt'
+        ]) &&
+        data.userId is string &&
+        data.userId == userId &&
+        isValidId(data.userId) &&
+        data.date is string &&
+        data.date == dateId &&
+        data.date.size() == 10 &&
+        data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$') &&
+        data.count is int &&
+        data.count >= 0 &&
+        data.count <= 10000 &&
+        data.serverCreatedAt is timestamp &&
+        data.serverUpdatedAt is timestamp;
+    }
+
+    // -------------------------------------------------------------------------
+    // /users/{userId} — Private Owner-Only Profile & Study Desk
+    // -------------------------------------------------------------------------
+    match /users/{userId} {
+      allow get: if isValidId(userId) && isOwner(userId);
+      allow list: if false;
+
+      allow create: if isValidId(userId) &&
+        isVerifiedOwner(userId) &&
+        isValidUserProfile(incoming(), userId) &&
+        (incoming().email == '' || incoming().email == request.auth.token.email) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isValidId(userId) &&
+        isVerifiedOwner(userId) &&
+        isValidUserProfile(incoming(), userId) &&
+        incoming().userId == existing().userId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (incoming().email == existing().email || incoming().email == request.auth.token.email) &&
+        (
+          incoming().diff(existing()).affectedKeys().hasOnly(['name', 'handle', 'bio', 'dailyTargetMinutes', 'updatedAt']) ||
+          incoming().diff(existing()).affectedKeys().hasOnly(['dailyFocusTask', 'dailyFocusCompleted', 'updatedAt']) ||
+          incoming().diff(existing()).affectedKeys().hasOnly(['activeThreadId', 'updatedAt']) ||
+          incoming().diff(existing()).affectedKeys().hasOnly(['name', 'handle', 'email', 'bio', 'dailyFocusTask', 'dailyFocusCompleted', 'dailyTargetMinutes', 'activeThreadId', 'updatedAt'])
+        );
+
+      allow delete: if isValidId(userId) && isVerifiedOwner(userId);
+
+      // -----------------------------------------------------------------------
+      // /users/{userId}/goals/{goalId}
+      // -----------------------------------------------------------------------
+      match /goals/{goalId} {
+        allow get: if isValidId(userId) &&
+          isValidId(goalId) &&
+          isOwner(userId) &&
+          userDocExists(userId);
+
+        allow list: if isOwner(userId) &&
+          existing().userId == request.auth.uid;
+
+        allow create: if isValidId(userId) &&
+          isValidId(goalId) &&
+          isVerifiedOwner(userId) &&
+          isValidStudyGoal(incoming(), userId, goalId) &&
+          incoming().serverCreatedAt == request.time &&
+          incoming().serverUpdatedAt == request.time &&
+          userDocExistsAfter(userId);
+
+        allow update: if isValidId(userId) &&
+          isValidId(goalId) &&
+          isVerifiedOwner(userId) &&
+          isValidStudyGoal(incoming(), userId, goalId) &&
+          incoming().userId == existing().userId &&
+          incoming().id == existing().id &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().serverCreatedAt == existing().serverCreatedAt &&
+          incoming().serverUpdatedAt == request.time &&
+          userDocExists(userId) &&
+          (
+            incoming().diff(existing()).affectedKeys().hasOnly(['milestones', 'isActive', 'serverUpdatedAt']) ||
+            incoming().diff(existing()).affectedKeys().hasOnly(['isActive', 'serverUpdatedAt'])
+          );
+
+        allow delete: if isValidId(userId) &&
+          isValidId(goalId) &&
+          isVerifiedOwner(userId) &&
+          userDocExists(userId);
+      }
+
+      // -----------------------------------------------------------------------
+      // /users/{userId}/notes/{noteId}
+      // -----------------------------------------------------------------------
+      match /notes/{noteId} {
+        allow get: if isValidId(userId) &&
+          isValidId(noteId) &&
+          isOwner(userId) &&
+          userDocExists(userId);
+
+        allow list: if isOwner(userId) &&
+          existing().userId == request.auth.uid;
+
+        allow create: if isValidId(userId) &&
+          isValidId(noteId) &&
+          isVerifiedOwner(userId) &&
+          isValidStudyNote(incoming(), userId, noteId) &&
+          incoming().serverCreatedAt == request.time &&
+          incoming().serverUpdatedAt == request.time &&
+          userDocExistsAfter(userId);
+
+        allow update: if isValidId(userId) &&
+          isValidId(noteId) &&
+          isVerifiedOwner(userId) &&
+          isValidStudyNote(incoming(), userId, noteId) &&
+          incoming().userId == existing().userId &&
+          incoming().id == existing().id &&
+          incoming().serverCreatedAt == existing().serverCreatedAt &&
+          incoming().serverUpdatedAt == request.time &&
+          userDocExists(userId) &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['title', 'content', 'goalId', 'tags', 'updatedAt', 'serverUpdatedAt']);
+
+        allow delete: if isValidId(userId) &&
+          isValidId(noteId) &&
+          isVerifiedOwner(userId) &&
+          userDocExists(userId);
+      }
+
+      // -----------------------------------------------------------------------
+      // /users/{userId}/threads/{threadId}
+      // -----------------------------------------------------------------------
+      match /threads/{threadId} {
+        allow get: if isValidId(userId) &&
+          isValidId(threadId) &&
+          isOwner(userId) &&
+          userDocExists(userId);
+
+        allow list: if isOwner(userId) &&
+          existing().userId == request.auth.uid;
+
+        allow create: if isValidId(userId) &&
+          isValidId(threadId) &&
+          isVerifiedOwner(userId) &&
+          isValidChatThread(incoming(), userId, threadId) &&
+          incoming().serverCreatedAt == request.time &&
+          incoming().serverUpdatedAt == request.time &&
+          userDocExistsAfter(userId);
+
+        allow update: if isValidId(userId) &&
+          isValidId(threadId) &&
+          isVerifiedOwner(userId) &&
+          isValidChatThread(incoming(), userId, threadId) &&
+          incoming().userId == existing().userId &&
+          incoming().id == existing().id &&
+          incoming().serverCreatedAt == existing().serverCreatedAt &&
+          incoming().serverUpdatedAt == request.time &&
+          userDocExists(userId) &&
+          (
+            incoming().diff(existing()).affectedKeys().hasOnly(['mode', 'serverUpdatedAt']) ||
+            incoming().diff(existing()).affectedKeys().hasOnly(['goalId', 'serverUpdatedAt']) ||
+            incoming().diff(existing()).affectedKeys().hasOnly(['title', 'updatedAt', 'serverUpdatedAt'])
+          );
+
+        allow delete: if isValidId(userId) &&
+          isValidId(threadId) &&
+          isVerifiedOwner(userId) &&
+          userDocExists(userId);
+
+        // ---------------------------------------------------------------------
+        // /users/{userId}/threads/{threadId}/messages/{messageId}
+        // ---------------------------------------------------------------------
+        match /messages/{messageId} {
+          allow get: if isValidId(userId) &&
+            isValidId(threadId) &&
+            isValidId(messageId) &&
+            isOwner(userId) &&
+            threadDocExists(userId, threadId);
+
+          allow list: if isOwner(userId) &&
+            existing().userId == request.auth.uid;
+
+          allow create: if isValidId(userId) &&
+            isValidId(threadId) &&
+            isValidId(messageId) &&
+            isVerifiedOwner(userId) &&
+            isValidChatMessage(incoming(), userId, messageId) &&
+            incoming().serverCreatedAt == request.time &&
+            threadDocExistsAfter(userId, threadId);
+
+          allow update: if false;
+
+          allow delete: if isValidId(userId) &&
+            isValidId(threadId) &&
+            isValidId(messageId) &&
+            isVerifiedOwner(userId) &&
+            userDocExists(userId);
+        }
+      }
+
+      // -----------------------------------------------------------------------
+      // /users/{userId}/flashcards/{cardId}
+      // -----------------------------------------------------------------------
+      match /flashcards/{cardId} {
+        allow get: if isValidId(userId) &&
+          isValidId(cardId) &&
+          isOwner(userId) &&
+          userDocExists(userId);
+
+        allow list: if isOwner(userId) &&
+          existing().userId == request.auth.uid;
+
+        allow create: if isValidId(userId) &&
+          isValidId(cardId) &&
+          isVerifiedOwner(userId) &&
+          isValidFlashcard(incoming(), userId, cardId) &&
+          incoming().serverCreatedAt == request.time &&
+          incoming().serverUpdatedAt == request.time &&
+          userDocExistsAfter(userId);
+
+        allow update: if isValidId(userId) &&
+          isValidId(cardId) &&
+          isVerifiedOwner(userId) &&
+          isValidFlashcard(incoming(), userId, cardId) &&
+          incoming().userId == existing().userId &&
+          incoming().id == existing().id &&
+          incoming().topicId == existing().topicId &&
+          incoming().serverCreatedAt == existing().serverCreatedAt &&
+          incoming().serverUpdatedAt == request.time &&
+          userDocExists(userId) &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['mastered', 'serverUpdatedAt']);
+
+        allow delete: if isValidId(userId) &&
+          isValidId(cardId) &&
+          isVerifiedOwner(userId) &&
+          userDocExists(userId);
+      }
+
+      // -----------------------------------------------------------------------
+      // /users/{userId}/quizAttempts/{attemptId}
+      // -----------------------------------------------------------------------
+      match /quizAttempts/{attemptId} {
+        allow get: if isValidId(userId) &&
+          isValidId(attemptId) &&
+          isOwner(userId) &&
+          userDocExists(userId);
+
+        allow list: if isOwner(userId) &&
+          existing().userId == request.auth.uid;
+
+        allow create: if isValidId(userId) &&
+          isValidId(attemptId) &&
+          isVerifiedOwner(userId) &&
+          isValidQuizAttempt(incoming(), userId, attemptId) &&
+          incoming().serverCreatedAt == request.time &&
+          userDocExistsAfter(userId);
+
+        allow update: if false;
+
+        allow delete: if isValidId(userId) &&
+          isValidId(attemptId) &&
+          isVerifiedOwner(userId) &&
+          userDocExists(userId);
+      }
+
+      // -----------------------------------------------------------------------
+      // /users/{userId}/activityDays/{dateId}
+      // -----------------------------------------------------------------------
+      match /activityDays/{dateId} {
+        allow get: if isValidId(userId) &&
+          isValidId(dateId) &&
+          isOwner(userId) &&
+          userDocExists(userId);
+
+        allow list: if isOwner(userId) &&
+          existing().userId == request.auth.uid;
+
+        allow create: if isValidId(userId) &&
+          isValidId(dateId) &&
+          isVerifiedOwner(userId) &&
+          isValidActivityDay(incoming(), userId, dateId) &&
+          incoming().serverCreatedAt == request.time &&
+          incoming().serverUpdatedAt == request.time &&
+          userDocExistsAfter(userId);
+
+        allow update: if isValidId(userId) &&
+          isValidId(dateId) &&
+          isVerifiedOwner(userId) &&
+          isValidActivityDay(incoming(), userId, dateId) &&
+          incoming().userId == existing().userId &&
+          incoming().date == existing().date &&
+          incoming().serverCreatedAt == existing().serverCreatedAt &&
+          incoming().serverUpdatedAt == request.time &&
+          userDocExists(userId) &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['count', 'serverUpdatedAt']);
+
+        allow delete: if isValidId(userId) &&
+          isValidId(dateId) &&
+          isVerifiedOwner(userId) &&
+          userDocExists(userId);
+      }
+    }
+  }
+}
